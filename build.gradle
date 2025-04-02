@@ -9,6 +9,12 @@ plugins {
 version = mod_version
 group = mod_group_id
 
+jar {
+    archiveBaseName.set('ExtendEnchantments')
+    archiveClassifier.set('forge1.20.1')
+    archiveVersion.set(version)
+}
+
 base {
     archivesName = mod_id
 }
@@ -218,3 +224,4 @@ tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
         freeCompilerArgs += ['-Xjvm-default=all']
     }
 }
+
