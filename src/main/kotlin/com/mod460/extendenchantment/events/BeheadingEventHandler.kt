@@ -38,36 +38,64 @@ object BeheadingEventHandler {
             val weapon = attacker.mainHandItem
             if (weapon.isEmpty) return
 
+            var totalDropChance = 0f
             for (enchantment in BEHEADING_ENCHANTMENTS) {
                 val level = EnchantmentHelper.getItemEnchantmentLevel(enchantment.get(), weapon)
                 if (level > 0) {
-                    val enchantmentName = enchantment.id.toString() // `registryName` 取得の代わりに `id` を使用
+                    val enchantmentName = enchantment.id.toString()
                     val dropChance = (enchantment.get() as BaseBeheadingEnchantment).getDropChance(level)
+                    totalDropChance += dropChance
                     ExtendEnchantment.LOGGER.info("Drop chance: $dropChance Level: $level Enchantment: ${enchantment.get().javaClass.simpleName}")
+                }
+            }
 
-                    if (Random().nextFloat() < dropChance / 100f) {
-                        // ログを追加してランダム値も確認
-                        ExtendEnchantment.LOGGER.info("Random check passed! Entity type: ${entity.type}")
-                        val headItem = when (entity.type) {
-                            EntityType.ZOMBIE -> Items.ZOMBIE_HEAD
-                            EntityType.SKELETON -> Items.SKELETON_SKULL
-                            EntityType.CREEPER -> Items.CREEPER_HEAD
-                            EntityType.ENDER_DRAGON -> Items.DRAGON_HEAD
-                            EntityType.WITHER_SKELETON -> Items.WITHER_SKELETON_SKULL
-                            EntityType.PLAYER -> Items.PLAYER_HEAD
-                            else -> null
-                        }
+            ExtendEnchantment.LOGGER.debug("Total drop chance: $totalDropChance")
 
-                        if (headItem != null) {
-                            // 頭のアイテムをドロップ
-                            val headStack = ItemStack(headItem)
-                            if (entity is Player) {
-                                headStack.getOrCreateTag().putString("SkullOwner", entity.name.string)
-                            }
-                            entity.spawnAtLocation(headStack)
-                        }
+            // 確定ドロップ数の計算
+            val guaranteedDrops = (totalDropChance / 100).toInt()
+            ExtendEnchantment.LOGGER.debug("Guaranteed drops: $guaranteedDrops")
+            val remainingChance = totalDropChance % 100
+            ExtendEnchantment.LOGGER.debug("Remaining chance: $remainingChance")
+
+            // 確定ドロップ
+            for (i in 0 until guaranteedDrops) {
+                val headItem = when (entity.type) {
+                    EntityType.ZOMBIE -> Items.ZOMBIE_HEAD
+                    EntityType.SKELETON -> Items.SKELETON_SKULL
+                    EntityType.CREEPER -> Items.CREEPER_HEAD
+                    EntityType.ENDER_DRAGON -> Items.DRAGON_HEAD
+                    EntityType.WITHER_SKELETON -> Items.WITHER_SKELETON_SKULL
+                    EntityType.PLAYER -> Items.PLAYER_HEAD
+                    else -> null
+                }
+
+                if (headItem != null) {
+                    val headStack = ItemStack(headItem)
+                    if (entity is Player) {
+                        headStack.getOrCreateTag().putString("SkullOwner", entity.name.string)
                     }
+                    entity.spawnAtLocation(headStack)
+                }
+            }
 
+            // 残りの確率で追加ドロップ
+            if (Random().nextFloat() < remainingChance / 100f) {
+                val headItem = when (entity.type) {
+                    EntityType.ZOMBIE -> Items.ZOMBIE_HEAD
+                    EntityType.SKELETON -> Items.SKELETON_SKULL
+                    EntityType.CREEPER -> Items.CREEPER_HEAD
+                    EntityType.ENDER_DRAGON -> Items.DRAGON_HEAD
+                    EntityType.WITHER_SKELETON -> Items.WITHER_SKELETON_SKULL
+                    EntityType.PLAYER -> Items.PLAYER_HEAD
+                    else -> null
+                }
+
+                if (headItem != null) {
+                    val headStack = ItemStack(headItem)
+                    if (entity is Player) {
+                        headStack.getOrCreateTag().putString("SkullOwner", entity.name.string)
+                    }
+                    entity.spawnAtLocation(headStack)
                 }
             }
         }
